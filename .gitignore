@@ -1,0 +1,9 @@
+www/
+test.sh
+.cache/
+compile_commands.json
+
+kestrel
+
+*.o
+*.d
