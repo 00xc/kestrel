@@ -51,7 +51,7 @@ struct ks_file *fcache_open(struct ks_fcache *cache, const char *path)
 struct ks_file *fcache_insert(struct ks_fcache *cache, const char *path,
 							  struct ks_file *file)
 {
-	struct ks_cached_file *c = NULL, *f;
+	struct ks_cached_file *dst = NULL, *f;
 	struct ks_file *fevict = NULL;
 	size_t i;
 
@@ -63,23 +63,23 @@ struct ks_file *fcache_insert(struct ks_fcache *cache, const char *path,
 		/* Find least recently used file in order to evict it */
 		for (i = 0; i < cache->len; ++i) {
 			f = &cache->items[i];
-			if ((!c || f->lru < c->lru) && !f->refcnt)
-				c = f;
+			if ((!dst || f->lru < dst->lru) && !f->refcnt)
+				dst = f;
 		}
-		if (!c)
+		if (!dst)
 			return NULL;
 
-		fevict = c->file;
+		fevict = dst->file;
 		fevict->cached = 0;
 	} else {
-		c = &cache->items[cache->len++];
+		dst = &cache->items[cache->len++];
 	}
 
 	file->cached = 1;
-	c->file = file;
-	c->lru = ++cache->gen;
-	c->refcnt = 1;
-	strncpy(c->path, path, PATH_MAX - 1);
+	dst->file = file;
+	dst->lru = ++cache->gen;
+	dst->refcnt = 1;
+	strncpy(dst->path, path, PATH_MAX - 1);
 	return fevict;
 }
 
