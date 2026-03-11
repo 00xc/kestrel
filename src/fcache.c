@@ -28,14 +28,15 @@ void fcache_init(struct ks_fcache *cache)
  * Lookup a file, updating it's LRU counter if found.
  */
 static struct ks_cached_file *fcache_find(struct ks_fcache *cache,
-										  const char *path)
+										  struct ks_path *path)
 {
 	struct ks_cached_file *c;
 	size_t i;
 
 	for (i = 0; i < cache->len; ++i) {
 		c = &cache->items[i];
-		if (!strcmp(c->path, path)) {
+		if (c->len == path->len &&
+			!memcmp(c->path, path->path, path->len)) {
 			c->lru = ++cache->gen;
 			return c;
 		}
@@ -44,7 +45,8 @@ static struct ks_cached_file *fcache_find(struct ks_fcache *cache,
 	return NULL;
 }
 
-struct ks_file *fcache_open(struct ks_fcache *cache, const char *path)
+struct ks_file *fcache_open(struct ks_fcache *cache,
+							struct ks_path *path)
 {
 	struct ks_cached_file *c;
 
@@ -61,7 +63,8 @@ struct ks_file *fcache_open(struct ks_fcache *cache, const char *path)
  * necessary an old file. If a file is evicted, it is returned to the
  * caller so that it can adequately be released.
  */
-struct ks_file *fcache_insert(struct ks_fcache *cache, const char *path,
+struct ks_file *fcache_insert(struct ks_fcache *cache,
+							  struct ks_path *path,
 							  struct ks_file *file)
 {
 	struct ks_cached_file *dst = NULL, *f;
@@ -92,7 +95,8 @@ struct ks_file *fcache_insert(struct ks_fcache *cache, const char *path,
 	dst->file = file;
 	dst->lru = ++cache->gen;
 	dst->refcnt = 1;
-	strncpy(dst->path, path, PATH_MAX - 1);
+	strncpy(dst->path, path->path, PATH_MAX - 1);
+	dst->len = path->len;
 	return fevict;
 }
 

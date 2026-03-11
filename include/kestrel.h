@@ -3,12 +3,13 @@
 #define __KESTREL_H
 
 #include <stddef.h>
+#include <stdint.h>
 
 void setup_seccomp(void);
 
 struct ks_path {
 	const char *path;
-	size_t len;
+	uint32_t len;
 };
 
 struct ks_file {

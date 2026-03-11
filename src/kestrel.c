@@ -499,7 +499,7 @@ static int conn_complete_read(struct worker_ctx *ctx,
 	if (conn_parse_http(conn))
 		return conn_start_send(ctx, conn, 400);
 
-	file = fcache_open(&ctx->fcache, conn->path.path);
+	file = fcache_open(&ctx->fcache, &conn->path);
 	if (file) {
 		slab_free(&ctx->file_slab, conn->file);
 		conn->file = file;
@@ -537,7 +537,7 @@ static int conn_complete_open(struct worker_ctx *ctx,
 	if (file->map == MAP_FAILED)
 		return conn_start_send(ctx, conn, 500);
 
-	file = fcache_insert(&ctx->fcache, conn->path.path, file);
+	file = fcache_insert(&ctx->fcache, &conn->path, file);
 	if (file) {
 		/* Close and free the evicted file */
 		file_raw_close(file);
