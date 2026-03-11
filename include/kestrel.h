@@ -6,6 +6,11 @@
 
 void setup_seccomp(void);
 
+struct ks_path {
+	const char *path;
+	size_t len;
+};
+
 struct ks_file {
 	int fd;
 	int cached;

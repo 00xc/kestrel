@@ -104,7 +104,7 @@ struct connection {
 	/* Request receive buffer */
 	struct ks_recv recv;
 	/* Pointer into recv.buf with the file path */
-	const char *path;
+	struct ks_path path;
 	/* Header send buffer */
 	struct ks_hdr hdr;
 	/* File to send after header */
@@ -133,14 +133,15 @@ static struct __kernel_timespec timeout = {
 	.tv_nsec = READ_TIMEOUT_NSEC,
 };
 
-static const char *conn_parse_http(struct connection *conn)
+static int conn_parse_http(struct connection *conn)
 {
 	struct ks_recv *recv = &conn->recv;
+	struct ks_path *path = &conn->path;
 	char *start, *end, *hdrs;
 	size_t len;
 
 	if (recv->off < 4 || *(uint32_t *)recv->buf != *(uint32_t *)"GET ")
-		return NULL;
+		return 1;
 
 	start = recv->buf + 4;
 	while (*start == '/')
@@ -148,23 +149,28 @@ static const char *conn_parse_http(struct connection *conn)
 
 	end = memchr(start, ' ', recv->off - 4);
 	if (!end)
-		return NULL;
+		return 1;
 	*end = '\0';
 
 	if (uri_decode(start))
-		return NULL;
+		return 1;
 
 	len = (size_t)(end - start);
 	if (len >= PATH_MAX)
-		return NULL;
+		return 1;
 
-	if (start[0] == '\0')
-		start = DEFAULT_PAGE;
+	if (start[0] == '\0') {
+		path->path = DEFAULT_PAGE;
+		path->len = sizeof(DEFAULT_PAGE) - 1;
+	} else {
+		path->path = start;
+		path->len = len;
+	}
 
 	hdrs = end + 1;
 	conn->keepalive = memmem(hdrs, recv->off - (hdrs - recv->buf),
 							 "Connection: close", 17) == NULL;
-	return start;
+	return 0;
 }
 
 static struct io_uring_sqe *__get_sqe(struct io_uring *ring)
@@ -252,7 +258,7 @@ static int queue_open(struct worker_ctx *ctx, struct connection *conn)
 		return -EAGAIN;
 
 	conn->state = CONN_OPENING;
-	io_uring_prep_open(sqe, conn->path, O_RDONLY, 0);
+	io_uring_prep_open(sqe, conn->path.path, O_RDONLY, 0);
 	io_uring_sqe_set_data(sqe, conn);
 
 	conn->pending++;
@@ -490,11 +496,10 @@ static int conn_complete_read(struct worker_ctx *ctx,
 	}
 
 	recv->off = end - recv->buf;
-	conn->path = conn_parse_http(conn);
-	if (!conn->path)
+	if (conn_parse_http(conn))
 		return conn_start_send(ctx, conn, 400);
 
-	file = fcache_open(&ctx->fcache, conn->path);
+	file = fcache_open(&ctx->fcache, conn->path.path);
 	if (file) {
 		slab_free(&ctx->file_slab, conn->file);
 		conn->file = file;
@@ -532,7 +537,7 @@ static int conn_complete_open(struct worker_ctx *ctx,
 	if (file->map == MAP_FAILED)
 		return conn_start_send(ctx, conn, 500);
 
-	file = fcache_insert(&ctx->fcache, conn->path, file);
+	file = fcache_insert(&ctx->fcache, conn->path.path, file);
 	if (file) {
 		/* Close and free the evicted file */
 		file_raw_close(file);
