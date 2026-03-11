@@ -55,10 +55,9 @@ struct ks_file *fcache_insert(struct ks_fcache *cache, const char *path,
 	struct ks_file *fevict = NULL;
 	size_t i;
 
-	if (fcache_find(cache, path)) {
-		file->cached = 0;
+	file->cached = 0;
+	if (fcache_find(cache, path))
 		return NULL;
-	}
 
 	if (cache->len >= FCACHE_SIZE) {
 		/* Find least recently used file in order to evict it */
@@ -67,10 +66,11 @@ struct ks_file *fcache_insert(struct ks_fcache *cache, const char *path,
 			if ((!c || f->lru < c->lru) && !f->refcnt)
 				c = f;
 		}
-		if (c) {
-			fevict = c->file;
-			fevict->cached = 0;
-		}
+		if (!c)
+			return NULL;
+
+		fevict = c->file;
+		fevict->cached = 0;
 	} else {
 		c = &cache->items[cache->len++];
 	}
