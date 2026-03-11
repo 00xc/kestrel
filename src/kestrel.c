@@ -356,6 +356,7 @@ static void conn_clear(struct worker_ctx *ctx, struct connection *conn)
 	if (!file->cached) {
 		file_raw_close(file);
 	} else {
+		fcache_close(&ctx->fcache, conn->file);
 		conn->file = slab_alloc(&ctx->file_slab);
 	}
 
