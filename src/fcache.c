@@ -3,12 +3,25 @@
 #include "fcache.h"
 #include "kestrel.h"
 
+#include <err.h>
+#include <stdlib.h>
 #include <string.h>
 
 void fcache_init(struct ks_fcache *cache)
 {
+	struct ks_cached_file *f;
+	size_t i;
+
 	cache->len = 0;
 	cache->gen = 0;
+	slab_init(&cache->path_slab, PATH_MAX);
+
+	for (i = 0; i < FCACHE_SIZE; ++i) {
+		f = &cache->items[i];
+		f->path = slab_alloc(&cache->path_slab);
+		if (!f->path)
+			err(EXIT_FAILURE, "fcache_init: slab_alloc");
+	}
 }
 
 /*
@@ -104,5 +117,6 @@ struct ks_file *fcache_pop(struct ks_fcache *cache)
 
 	c = &cache->items[--cache->len];
 	c->file->cached = 0;
+	slab_free(&cache->path_slab, c->path);
 	return c->file;
 }
