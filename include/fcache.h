@@ -3,7 +3,6 @@
 #define __KESTREL_FCACHE_H
 
 #include "kestrel.h"
-#include "slab.h"
 
 #include <linux/limits.h>
 #include <stddef.h>
@@ -21,7 +20,6 @@ struct ks_cached_file {
 struct ks_fcache {
 	size_t len;
 	uint32_t gen;
-	struct ks_slab path_slab;
 	struct ks_cached_file items[FCACHE_SIZE];
 };
 

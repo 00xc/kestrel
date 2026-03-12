@@ -14,13 +14,12 @@ void fcache_init(struct ks_fcache *cache)
 
 	cache->len = 0;
 	cache->gen = 0;
-	slab_init(&cache->path_slab, PATH_MAX);
 
 	for (i = 0; i < FCACHE_SIZE; ++i) {
 		f = &cache->items[i];
-		f->path = slab_alloc(&cache->path_slab);
+		f->path = malloc(PATH_MAX);
 		if (!f->path)
-			err(EXIT_FAILURE, "fcache_init: slab_alloc");
+			err(EXIT_FAILURE, "fcache_init: malloc");
 	}
 }
 
@@ -121,6 +120,6 @@ struct ks_file *fcache_pop(struct ks_fcache *cache)
 
 	c = &cache->items[--cache->len];
 	c->file->cached = 0;
-	slab_free(&cache->path_slab, c->path);
+	free(c->path);
 	return c->file;
 }
