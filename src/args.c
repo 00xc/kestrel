@@ -35,7 +35,7 @@ static _Noreturn void usage(const char *progname)
 	exit(EXIT_FAILURE);
 }
 
-void parse_args(int argc, char **argv, struct args *args)
+void parse_args(int argc, char *const argv[], struct args *args)
 {
 	const struct option long_options[] = {
 		{ "threads", required_argument, 0, 't' },

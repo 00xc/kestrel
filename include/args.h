@@ -12,6 +12,6 @@ struct args {
 	uint16_t port;
 };
 
-void parse_args(int argc, char **argv, struct args *args);
+void parse_args(int argc, char *const argv[], struct args *args);
 
 #endif

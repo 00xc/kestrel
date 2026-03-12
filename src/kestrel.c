@@ -887,7 +887,7 @@ static void drop_privs(struct passwd *pw)
 		errx(EXIT_FAILURE, "failed to drop privileges");
 }
 
-int main(int argc, char **argv)
+int main(int argc, char *const argv[])
 {
 	struct passwd *pw;
 	struct args args;
