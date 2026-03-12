@@ -7,8 +7,8 @@
 
 struct args {
 	size_t nthreads;
-	char *root;
-	char *user;
+	const char *root;
+	const char *user;
 	uint16_t port;
 };
 
