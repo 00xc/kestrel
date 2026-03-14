@@ -374,9 +374,6 @@ static void conn_free(struct worker_ctx *ctx, struct connection *conn)
 	if (!conn)
 		return;
 
-	if (conn->fd >= 0)
-		close(conn->fd);
-
 	conn_clear(ctx, conn);
 	slab_free(&ctx->file_slab, conn->file);
 	slab_free(&ctx->conn_slab, conn);
