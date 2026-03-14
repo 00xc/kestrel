@@ -528,6 +528,9 @@ static int conn_complete_open(struct worker_ctx *ctx,
 	if (ret)
 		return conn_start_send(ctx, conn, 500);
 
+	if (!S_ISREG(st.st_mode))
+		return conn_start_send(ctx, conn, 404);
+
 	file->len = st.st_size;
 	if (!file->len)
 		return conn_start_send(ctx, conn, 200);
