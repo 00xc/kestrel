@@ -514,7 +514,7 @@ static int conn_complete_open(struct worker_ctx *ctx,
 							  struct io_uring_cqe *cqe)
 {
 	struct ks_file *file = conn->file;
-	struct stat st;
+	struct statx st;
 	int ret;
 
 	file->len = 0;
@@ -524,14 +524,15 @@ static int conn_complete_open(struct worker_ctx *ctx,
 		return conn_start_send(ctx, conn, 404);
 
 	file->fd = cqe->res;
-	ret = fstat(file->fd, &st);
+	ret = statx(file->fd, "", AT_EMPTY_PATH, STATX_SIZE | STATX_MODE,
+				&st);
 	if (ret)
 		return conn_start_send(ctx, conn, 500);
 
-	if (!S_ISREG(st.st_mode))
+	if (!S_ISREG(st.stx_mode))
 		return conn_start_send(ctx, conn, 404);
 
-	file->len = st.st_size;
+	file->len = st.stx_size;
 	if (!file->len)
 		return conn_start_send(ctx, conn, 200);
 
